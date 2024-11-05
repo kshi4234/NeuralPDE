@@ -184,12 +184,12 @@ if __name__ == "__main__":
     )
 
 
-    boundary_condition = {"bottom": 3.0, "top": 2.0, "left": 2.5, "right": 2.5}
+    boundary_condition = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0}
 
 
 
     optimizer = torch.optim.Adam(mlp.parameters(), lr=0.01)
-    laplace_losses, boundary_losses = train(mlp, train_dataloader, val_dataloader, optimizer, num_epochs=50)
+    laplace_losses, boundary_losses = train(mlp, train_dataloader, val_dataloader, optimizer, num_epochs=1)
     print(f"Initial Laplace Loss: {laplace_losses[0]}")
     print(f"Initial Boundary Loss: {boundary_losses[0]}")
     print(f"Laplace Loss: {laplace_losses[-1]}")

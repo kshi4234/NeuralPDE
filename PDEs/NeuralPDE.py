@@ -23,6 +23,7 @@ class MLP(nn.Module):
 
 
     def forward(self, z):
+        print(z.dtype)
         z = self.input_layer(z)
         z = self.activation(z)
 
@@ -31,6 +32,7 @@ class MLP(nn.Module):
             z = self.activation(z)
         
         z = self.output_layer(z)
+        # multiply by differentiable function to make sure adheres to boundary conditions
         return z
 
     def test_forward(self):

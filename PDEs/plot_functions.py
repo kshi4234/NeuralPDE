@@ -13,14 +13,15 @@ def plot_solution(model: nn.Module, low: float, high: float):
     model.eval()
     with torch.no_grad():
 
-        x_vals = torch.linspace(low - 1.0, high + 1.0, 1000)
-        y_vals = torch.linspace(low - 1.0, high + 1.0, 1000)
+        x_vals = torch.linspace(low - 0.1, high + 0.1, 1000, dtype=torch.float64)
+        y_vals = torch.linspace(low - 0.1, high + 0.1, 1000, dtype=torch.float64)
         X, Y = torch.meshgrid(x_vals, y_vals, indexing="ij")    # generates 2500 points
         
         # Flatten and pass through the model
         x_flat = X.flatten().unsqueeze(1)
         y_flat = Y.flatten().unsqueeze(1)
         z = torch.cat((x_flat, y_flat), dim=-1)
+        print(z.dtype)
         u = model(z)
         U = u.reshape(X.shape).numpy()  # Reshape to grid and convert to numpy for plotting
         
