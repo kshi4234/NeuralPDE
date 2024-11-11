@@ -29,6 +29,7 @@ from tqdm import tqdm
 from NeuralPDE import MLP, DomainDataset
 from plot_functions import plot_solution
 from typing import Dict
+import numpy as np
 
 def generate_data(
     num_points: int = 10000,
@@ -41,14 +42,15 @@ def generate_data(
     Returns training, validation datasets
     """
 
-    x = torch.randint(low, high, (num_points,), dtype=torch.float32, requires_grad=True)           # generate num_points random point in Domain: [0, 1] x [0, 1]
-    y = torch.randint(low, high, (num_points,), dtype=torch.float32, requires_grad=True)
+    x = torch.tensor(np.linspace(low, high, num_points).reshape(-1, 1).astype(np.float32), requires_grad=True)
+    y = torch.tensor(np.linspace(low, high, num_points).reshape(-1, 1).astype(np.float32), requires_grad=True)
+
 
     domain_dataset = DomainDataset(x, y)
     domain_dataloader = DataLoader(domain_dataset, batch_size=64, shuffle=True)
 
-    x_val = torch.randint(low, high, (num_points // 10,), dtype=torch.float32, requires_grad=True)
-    y_val = torch.randint(low, high, (num_points // 10,), dtype=torch.float32, requires_grad=True)
+    x_val = torch.tensor(np.linspace(low, high, num_points // 10).reshape(-1, 1).astype(np.float32), requires_grad=True)
+    y_val = torch.tensor(np.linspace(low, high, num_points // 10).reshape(-1, 1).astype(np.float32), requires_grad=True)
 
     val_dataset = DomainDataset(x_val, y_val)
     val_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=True)
