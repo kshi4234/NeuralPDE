@@ -13,8 +13,8 @@ def plot_solution(model: nn.Module, low: float, high: float):
     model.eval()
     with torch.no_grad():
 
-        x_vals = torch.linspace(low - 0.1, high + 0.1, 1000, dtype=torch.float64)
-        y_vals = torch.linspace(low - 0.1, high + 0.1, 1000, dtype=torch.float64)
+        x_vals = torch.linspace(low - 0.1, high + 0.1, 1000, dtype=torch.float32)
+        y_vals = torch.linspace(low - 0.1, high + 0.1, 1000, dtype=torch.float32)
         X, Y = torch.meshgrid(x_vals, y_vals, indexing="ij")    # generates 2500 points
         
         # Flatten and pass through the model
