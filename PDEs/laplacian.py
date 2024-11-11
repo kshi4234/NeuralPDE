@@ -79,8 +79,9 @@ def gen_boundary_points(num_boundary_points: int = 1000, low: int = 0, high: int
 
     Returns concatenated boundary points: bottom, top, left, right each of which has 1000 points
     """
-    x = torch.randint(low, high, (num_boundary_points,), dtype=torch.float32, requires_grad=True).unsqueeze(1)        # x and y are free on the boundary if the other is constrained to low / high
-    y = torch.randint(low, high, (num_boundary_points,), dtype=torch.float32, requires_grad=True).unsqueeze(1)
+
+    x = torch.tensor(np.linspace(low, high, num_boundary_points).reshape(-1, 1).astype(np.float32))    # x and y are free on the boundary if the other is constrained to low / high
+    y = torch.tensor(np.linspace(low, high, num_boundary_points).reshape(-1, 1).astype(np.float32))
 
     y_bottom = torch.tensor(float(low), dtype=torch.float32, requires_grad=True).repeat(num_boundary_points).unsqueeze(1)
     y_top = torch.tensor(float(high), dtype=torch.float32, requires_grad=True).repeat(num_boundary_points).unsqueeze(1)
