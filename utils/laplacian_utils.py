@@ -26,36 +26,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from NeuralPDE import MLP, DomainDataset
-from plot_functions import plot_solution
+from models.NeuralPDE import MLP
+from utils.plot_utils import plot_solution
 from typing import Dict
 import numpy as np
+from utils.data_utils import (
+    generate_data_loader, generate_data
+)
+from tqdm import tqdm
+from utils.plot_utils import (
+    plot_solution
+)
 
-def generate_data(
-    num_points: int = 10000,
-    low: int = 0,
-    high: int = 1
-    ):
-    """
-    Requires grad must be true for gradient computation
-
-    Returns training, validation datasets
-    """
-
-    x = torch.tensor(np.linspace(low, high, num_points).reshape(-1, 1).astype(np.float32), requires_grad=True)
-    y = torch.tensor(np.linspace(low, high, num_points).reshape(-1, 1).astype(np.float32), requires_grad=True)
-
-
-    domain_dataset = DomainDataset(x, y)
-    domain_dataloader = DataLoader(domain_dataset, batch_size=64, shuffle=True)
-
-    x_val = torch.tensor(np.linspace(low, high, num_points // 10).reshape(-1, 1).astype(np.float32), requires_grad=True)
-    y_val = torch.tensor(np.linspace(low, high, num_points // 10).reshape(-1, 1).astype(np.float32), requires_grad=True)
-
-    val_dataset = DomainDataset(x_val, y_val)
-    val_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=True)
-
-    return domain_dataloader, val_dataloader
 
 
 # Interior Functions
@@ -140,6 +122,44 @@ def compute_loss(
 
 
 
+def train_plot(
+    model: nn.Module,
+    train_dataloader: DataLoader,
+    val_dataloader: DataLoader,
+    optimizer: torch.optim.Optimizer,
+    num_epochs: int = 1000,
+    boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
+    alpha: float = 1.0
+):
+    laplace_losses = []
+    boundary_losses = []
+
+    i = 0
+    for epoch in range(num_epochs):
+        model.train()
+        for batch in tqdm(train_dataloader):
+            x, y = batch
+
+
+
+            optimizer.zero_grad()
+            z = torch.cat((x, y), dim=-1)
+            u = model(z)
+            laplacian_loss, boundary_loss = compute_loss(model, u, x, y, boundary_condition)
+            loss = boundary_loss + alpha * laplacian_loss 
+            laplace_losses.append(laplacian_loss.item())
+            boundary_losses.append(boundary_loss.item())
+            loss.backward()
+            optimizer.step()
+
+            plot_solution(model, low=0.0, high=1.0, id=i)
+            i += 1
+        
+        
+        print(f"Epoch {epoch}")
+
+    return laplace_losses, boundary_losses
+    
 
 def train(
     model: nn.Module,
@@ -149,7 +169,7 @@ def train(
     num_epochs: int = 1000,
     boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
     alpha: float = 1.0
-    ):
+):
     laplace_losses = []
     boundary_losses = []
 
@@ -168,37 +188,74 @@ def train(
             laplace_losses.append(laplacian_loss.item())
             boundary_losses.append(boundary_loss.item())
             loss.backward()
-            optimizer.step()
-        
+            optimizer.step()        
         
         print(f"Epoch {epoch}")
 
     return laplace_losses, boundary_losses
 
+def train_no_batches(
+    model: nn.Module,
+    train_x: torch.Tensor,
+    train_y: torch.Tensor,
+    optimizer: torch.optim.Optimizer,
+    num_epochs: int = 1000,
+    boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
+    alpha: float = 1.0,
+):
+    """
+    Trains directly w/o batches
+    """
+    train_x, train_y = train_x.unsqueeze(1).float(), train_y.unsqueeze(1).float()       # Unsure if .float() is necessary
+    laplacian_loss = []
+    boundary_loss = []
+
+    for _ in enumerate(tqdm(range(num_epochs))):
+        model.train()
+        optimizer.zero_grad()
+        z = torch.cat((train_x, train_y), dim=-1)
+        u = model(z)
+        laplacian, boundary_err = compute_loss(model, u, train_x, train_y, boundary_condition)
+        loss = laplacian + alpha * boundary_err
+        laplacian_loss.append(laplacian.item())
+        boundary_loss.append(boundary_err.item())
+
+        loss.backward()
+        optimizer.step()
+
+        # print(f"Epoch {epoch}: Laplacian Loss: {laplacian.item()}, Boundary Loss: {boundary_err.item()}")
+
+    return laplacian_loss, boundary_loss
 
 
 
 if __name__ == "__main__":
-    mlp = MLP(input_dim=2, hidden_dim=128, output_dim=1, depth=3, activation=F.tanh)
-    train_dataloader, val_dataloader = generate_data(
+    Laplacian_PINN = MLP(input_dim=2, hidden_dim=128, output_dim=1, depth=3, activation=F.relu)
+    x_train, y_train, _, _ = generate_data(
         num_points=10000,
-        low=0,
-        high=1
+        low = 0,
+        high = 1
     )
 
+    boundary_condition = {"bottom": 2.0, "top": 3.0, "left": 2.0, "right": 3.0}
 
-    boundary_condition = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0}
+    optimizer = torch.optim.Adam(Laplacian_PINN.parameters(), lr=0.01)
 
+    laplace_losses, boundary_losses = train_no_batches(
+        model=Laplacian_PINN, 
+        train_x=x_train,
+        train_y=y_train,
+        optimizer=optimizer,
+        num_epochs=10,
+        boundary_condition=boundary_condition,
+        alpha=1.0
+    )
 
-
-    optimizer = torch.optim.Adam(mlp.parameters(), lr=0.01)
-    laplace_losses, boundary_losses = train(mlp, train_dataloader, val_dataloader, optimizer, num_epochs=1)
     print(f"Initial Laplace Loss: {laplace_losses[0]}")
     print(f"Initial Boundary Loss: {boundary_losses[0]}")
     print(f"Laplace Loss: {laplace_losses[-1]}")
     print(f"Boundary Loss: {boundary_losses[-1]}")
-    # print(f"Validation Loss: {val_losses[-1]}")
-    plot_solution(mlp, low=0, high=1)
+    plot_solution(Laplacian_PINN, low=0, high=1)
 
 
 
