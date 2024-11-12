@@ -2,9 +2,7 @@ import os
 import sys
 
 """
-TODO - Why does it work with batching but not without batching?
-
-200 epochs + 
+30 epochs w/o batching essentially solves Laplace
 """
 
 module_path = os.path.abspath(os.path.join('.'))
@@ -17,7 +15,7 @@ from utils.data_utils import (
 )
 
 from utils.laplacian_utils import (
-    train_no_batches, train_plot
+    train_no_batches, train_plot, train
 )
 
 from models.NeuralPDE import (
@@ -40,12 +38,12 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(Laplacian_PINN.parameters(), lr=0.01)
 
-    laplace_losses, boundary_losses = train_plot(
+    laplace_losses, boundary_losses = train(
         model=Laplacian_PINN, 
         train_dataloader=train_dl,
         val_dataloader=val_dl,
         optimizer=optimizer,
-        num_epochs=2,
+        num_epochs=30,
         boundary_condition=boundary_condition,
         alpha=1.0
     )
@@ -58,5 +56,5 @@ if __name__ == "__main__":
     print(f"Laplace Loss: {laplace_losses[-1]}")
     print(f"Boundary Loss: {boundary_losses[-1]}")
     plot_solution(Laplacian_PINN, low=0, high=1, id=-1)
-    make_gif(folder=FOLDER, name="learning_laplacian", fps=4)
+    # make_gif(folder=FOLDER, name="learning_laplacian", fps=4)
     

@@ -13,7 +13,7 @@ def generate_data_loader(
     """
     Requires grad must be true for gradient computation
 
-    Returns training, validation datasets. Uses dataloader
+    Returns training, validation datasets. 
     """
 
     x = torch.tensor(np.linspace(low, high, num_points).reshape(-1, 1).astype(np.float32), requires_grad=True)

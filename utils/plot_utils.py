@@ -18,6 +18,8 @@ def extract_num(
 ) -> Union[int, float]:
     """
     Extracts number from filename
+
+    Helper function for make_gif
     """
     base = os.path.basename(filename)
     number = ''.join(filter(str.isdigit, base))
@@ -54,6 +56,11 @@ def plot_losses(losses: list[float]):
 
 
 def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] = 0):
+    """
+    Evaluates model over grid of points to visualize surface
+    
+    pass id = -1 to view instead of saving
+    """
     model.eval()
     with torch.no_grad():
 
@@ -77,9 +84,11 @@ def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] =
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('U')
+        ax.set_zlim(2, 3)
         
         if id == -1:
             plt.show()
+            print(U)
         
         else:
             plt.savefig(f"{FOLDER}/{str(id)}.png")

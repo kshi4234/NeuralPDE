@@ -131,6 +131,11 @@ def train_plot(
     boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
     alpha: float = 1.0
 ):
+    """
+    Trains model for num_epochs
+
+    Plots surface of function at each batch. Can be used to make learning gifs
+    """
     laplace_losses = []
     boundary_losses = []
 
@@ -170,6 +175,10 @@ def train(
     boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
     alpha: float = 1.0
 ):
+    """
+    Trains model
+    """
+
     laplace_losses = []
     boundary_losses = []
 
@@ -228,34 +237,6 @@ def train_no_batches(
     return laplacian_loss, boundary_loss
 
 
-
-if __name__ == "__main__":
-    Laplacian_PINN = MLP(input_dim=2, hidden_dim=128, output_dim=1, depth=3, activation=F.relu)
-    x_train, y_train, _, _ = generate_data(
-        num_points=10000,
-        low = 0,
-        high = 1
-    )
-
-    boundary_condition = {"bottom": 2.0, "top": 3.0, "left": 2.0, "right": 3.0}
-
-    optimizer = torch.optim.Adam(Laplacian_PINN.parameters(), lr=0.01)
-
-    laplace_losses, boundary_losses = train_no_batches(
-        model=Laplacian_PINN, 
-        train_x=x_train,
-        train_y=y_train,
-        optimizer=optimizer,
-        num_epochs=10,
-        boundary_condition=boundary_condition,
-        alpha=1.0
-    )
-
-    print(f"Initial Laplace Loss: {laplace_losses[0]}")
-    print(f"Initial Boundary Loss: {boundary_losses[0]}")
-    print(f"Laplace Loss: {laplace_losses[-1]}")
-    print(f"Boundary Loss: {boundary_losses[-1]}")
-    plot_solution(Laplacian_PINN, low=0, high=1)
 
 
 
