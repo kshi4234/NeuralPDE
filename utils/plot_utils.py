@@ -55,7 +55,7 @@ def plot_losses(losses: list[float]):
     plt.show()
 
 
-def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] = 0):
+def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] = 0, z_lim_up=3, z_lim_down=2):
     """
     Evaluates model over grid of points to visualize surface
     
@@ -80,11 +80,11 @@ def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] =
         ax = fig.add_subplot(111, projection='3d')
         
         # Convert X, Y, U to numpy for plotting
-        ax.plot_surface(X.numpy(), Y.numpy(), U, cmap='viridis', edgecolor='k')
+        ax.plot_surface(X.numpy(), Y.numpy(), U, cmap='plasma', edgecolor='k')
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('U')
-        ax.set_zlim(2, 3)
+        ax.set_zlim(z_lim_down, z_lim_up)
         
         if id == -1:
             plt.show()

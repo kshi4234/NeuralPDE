@@ -31,7 +31,7 @@ from utils.plot_utils import plot_solution
 from typing import Dict
 import numpy as np
 from utils.data_utils import (
-    generate_data_loader, generate_data
+    gen_boundary_points
 )
 from tqdm import tqdm
 from utils.plot_utils import (
@@ -54,27 +54,6 @@ def compute_laplacian(u, x, y):
 
 
 # Boundary Functions
-
-def gen_boundary_points(num_boundary_points: int = 1000, low: int = 0, high: int = 1):
-    """
-    Generate boundary points on the domain [low, high] x [low, high]
-
-    Returns concatenated boundary points: bottom, top, left, right each of which has 1000 points
-    """
-
-    x = torch.tensor(np.linspace(low, high, num_boundary_points).reshape(-1, 1).astype(np.float32))    # x and y are free on the boundary if the other is constrained to low / high
-    y = torch.tensor(np.linspace(low, high, num_boundary_points).reshape(-1, 1).astype(np.float32))
-
-    y_bottom = torch.tensor(float(low), dtype=torch.float32, requires_grad=True).repeat(num_boundary_points).unsqueeze(1)
-    y_top = torch.tensor(float(high), dtype=torch.float32, requires_grad=True).repeat(num_boundary_points).unsqueeze(1)
-    x_left = torch.tensor(float(low), dtype=torch.float32, requires_grad=True).repeat(num_boundary_points).unsqueeze(1)
-    x_right = torch.tensor(float(high), dtype=torch.float32, requires_grad=True).repeat(num_boundary_points).unsqueeze(1)
-
-    bottom = torch.cat((x, y_bottom), dim=-1)
-    top = torch.cat((x, y_top), dim=-1)
-    left = torch.cat((x_left, y), dim=-1)
-    right = torch.cat((x_right, y), dim=-1)
-    return bottom, top, left, right
 
 def boundary_loss(model, boundary_points, boundary_condition):
     outputs = model(boundary_points)
@@ -173,7 +152,8 @@ def train(
     optimizer: torch.optim.Optimizer,
     num_epochs: int = 1000,
     boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
-    alpha: float = 1.0
+    alpha: float = 1.0,
+
 ):
     """
     Trains model
@@ -211,18 +191,26 @@ def train_no_batches(
     num_epochs: int = 1000,
     boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
     alpha: float = 1.0,
+    shuffle: bool = False
 ):
     """
     Trains directly w/o batches
     """
-    train_x, train_y = train_x.unsqueeze(1).float(), train_y.unsqueeze(1).float()       # Unsure if .float() is necessary
+    train_x, train_y = train_x.float(), train_y.float()       # Unsure if .float() is necessary
     laplacian_loss = []
     boundary_loss = []
 
+    
     for _ in enumerate(tqdm(range(num_epochs))):
+        
         model.train()
         optimizer.zero_grad()
         z = torch.cat((train_x, train_y), dim=-1)
+        if shuffle:                                 # shuffle at each epoch
+            idx = torch.randperm(z.shape[0])
+            z = z[idx].view(z.size())
+
+            
         u = model(z)
         laplacian, boundary_err = compute_loss(model, u, train_x, train_y, boundary_condition)
         loss = laplacian + alpha * boundary_err
