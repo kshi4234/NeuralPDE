@@ -3,12 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
+"""
+Dirichlet Boundary Condition: u(x, y) = f(x, y) for (x, y) on the boundary B
+"""
 
 
-class MLP(nn.Module):
+# Models
+
+class VanillaMLP(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, depth, activation=F.tanh):
         """
-        Defines basic MLP architecture
+        Defines basic VanillaMLP architecture
+
+        `Weighting Scheme`: for Dirichlet boundary conditions, weight error on interior + error on boundary
         """
         super().__init__()
         self.input_dim = input_dim
@@ -31,7 +38,6 @@ class MLP(nn.Module):
             z = self.activation(z)
         
         z = self.output_layer(z) 
-        # multiply by differentiable function to make sure adheres to boundary conditions
         return z
 
     def test_forward(self):
@@ -39,6 +45,56 @@ class MLP(nn.Module):
         y = self.forward(x)
         return y
 
+
+
+class ImpositionMLP(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, depth, activation, weak_distance_f):
+        """
+        https://www.sciencedirect.com/science/article/pii/S2405844023060280#coi0001
+        Method M_B
+
+        Gets boundary condition 'for free'
+        """
+
+        super().__init__()
+
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.hidden_layers = nn.ModuleList([nn.Linear(hidden_dim, hidden_dim) for _ in range(depth)])
+        self.output_layer = nn.Linear(hidden_dim, output_dim)
+
+        self.activation = activation
+        self.weak_distance_f = weak_distance_f
+    
+    def forward(self, z):
+        z1 = self.fc1(z)
+
+        for layer in self.hidden_layers:
+            z1 = layer(z1)
+            z1 = self.activation(z1)
+        
+        z1 = self.output_layer(z1)
+        return self.weak_distance_f(z1)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Dataset Classes
 
 class DomainDataset(Dataset):
     def __init__(self, x, y):

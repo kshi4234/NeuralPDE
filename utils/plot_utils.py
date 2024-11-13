@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 import os
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 import logging
 
 
@@ -55,7 +55,7 @@ def plot_losses(losses: list[float]):
     plt.show()
 
 
-def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] = 0, z_lim_up=3, z_lim_down=2):
+def plot_solution(model: nn.Module, domain_bounds: Dict[str, float], id: Optional[int] = 0, z_lim_up=3, z_lim_down=2):
     """
     Evaluates model over grid of points to visualize surface
     
@@ -64,8 +64,8 @@ def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] =
     model.eval()
     with torch.no_grad():
 
-        x_vals = torch.linspace(low, high, 1000, dtype=torch.float32)
-        y_vals = torch.linspace(low, high, 1000, dtype=torch.float32)
+        x_vals = torch.linspace(domain_bounds["left"], domain_bounds["right"], 1000, dtype=torch.float32)
+        y_vals = torch.linspace(domain_bounds["bottom"], domain_bounds["top"], 1000, dtype=torch.float32)
         X, Y = torch.meshgrid(x_vals, y_vals, indexing="ij")    # generates 2500 points
         
         # Flatten and pass through the model
