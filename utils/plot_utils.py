@@ -64,8 +64,8 @@ def plot_solution(model: nn.Module, domain_bounds: Dict[str, float], id: Optiona
     model.eval()
     with torch.no_grad():
 
-        x_vals = torch.linspace(domain_bounds["left"], domain_bounds["right"], 1000, dtype=torch.float32)
-        y_vals = torch.linspace(domain_bounds["bottom"], domain_bounds["top"], 1000, dtype=torch.float32)
+        x_vals = torch.linspace(domain_bounds["left"], domain_bounds["right"], 100, dtype=torch.float32)
+        y_vals = torch.linspace(domain_bounds["bottom"], domain_bounds["top"], 100, dtype=torch.float32)
         X, Y = torch.meshgrid(x_vals, y_vals, indexing="ij")    # generates 2500 points
         
         # Flatten and pass through the model

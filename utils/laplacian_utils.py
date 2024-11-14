@@ -14,11 +14,11 @@ If (x, y) is in B, then we know f - its equal to some known function g or some c
 Inputs: (x, y)
 Output: u(x, y)
 
-Loss function: 
+Loss function: M_a
 MSE + Boundary loss
 
-TODO: 
-- Validation loss
+Loss function: M_b
+g(u(x, y)) --> Give boundary values for free
 """
 
 import torch
@@ -121,47 +121,9 @@ def rectangle_loss(model, u, x, y, boundary_conditions, domain_bounds):
     return laplacian_loss, boundary_mse
 
 
-# Training Functions
+# Training Functions: Weighting Boundary Loss
+# All of these training methods have L(u) = alpha * L_boundary(u) + L_interior(u)
 
-def train_plot(
-    model: nn.Module,
-    train_dataloader: DataLoader,
-    val_dataloader: DataLoader,
-    optimizer: torch.optim.Optimizer,
-    num_epochs: int = 1000,
-    boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
-    alpha: float = 1.0
-):
-    """
-    Trains model for num_epochs
-
-    Plots surface of function at each batch. Can be used to make learning gifs
-    """
-    laplace_losses = []
-    boundary_losses = []
-
-    i = 0
-    for epoch in range(num_epochs):
-        model.train()
-        for batch in tqdm(train_dataloader):
-            x, y = batch
-            optimizer.zero_grad()
-            z = torch.cat((x, y), dim=-1)
-            u = model(z)
-            laplacian_loss, boundary_loss = compute_loss_square(model, u, x, y, boundary_condition)
-            loss = boundary_loss + alpha * laplacian_loss 
-            laplace_losses.append(laplacian_loss.item())
-            boundary_losses.append(boundary_loss.item())
-            loss.backward()
-            optimizer.step()
-
-            plot_solution(model, low=0.0, high=1.0, id=i)
-            i += 1
-        
-        print(f"Epoch {epoch}")
-
-    return laplace_losses, boundary_losses
-    
 
 def train(
     model: nn.Module,
@@ -184,7 +146,7 @@ def train(
         model.train()
         for batch in tqdm(train_dataloader):
             x, y = batch
-            x, y = x.unsqueeze(1).float(), y.unsqueeze(1).float()
+            x, y = x.float(), y.float()
 
             optimizer.zero_grad()
             z = torch.cat((x, y), dim=-1)
@@ -258,7 +220,7 @@ def train_no_batches_rectangle(
     """
     Trains directly w/o batches
 
-    Automaically enforces Dirichlet boundary conditions
+    
 
     boundary_condition: Dict[str, float] - boundary condition for each boundary
     domain_bounds: Dict[str, float] - domain bounds for the problem
@@ -270,7 +232,6 @@ def train_no_batches_rectangle(
 
     
     for _ in enumerate(tqdm(range(num_epochs))):
-        
         model.train()
         optimizer.zero_grad()
         z = torch.cat((train_x, train_y), dim=-1)
@@ -278,7 +239,6 @@ def train_no_batches_rectangle(
             idx = torch.randperm(z.shape[0])
             z = z[idx].view(z.size())
 
-            
         u = model(z)
         laplacian, boundary_err = boundary_func(model, u, train_x, train_y, boundary_condition, domain_bounds)
         loss = laplacian + alpha * boundary_err
@@ -288,8 +248,51 @@ def train_no_batches_rectangle(
         loss.backward()
         optimizer.step()
 
-        # print(f"Epoch {epoch}: Laplacian Loss: {laplacian.item()}, Boundary Loss: {boundary_err.item()}")
-
     return laplacian_loss, boundary_loss
 
 
+
+
+
+
+# Visualization Functions
+
+def train_plot(
+    model: nn.Module,
+    train_dataloader: DataLoader,
+    optimizer: torch.optim.Optimizer,
+    num_epochs: int = 1000,
+    boundary_condition: Dict[str, float] = {"bottom": 3.0, "top": 3.0, "left": 3.0, "right": 3.0},
+    alpha: float = 1.0
+):
+    """
+    Trains model for num_epochs
+
+    Plots surface of function at each batch.
+
+    Don't actually use for training, only use for visualizing to see if NN is fitting the data
+    """
+    laplace_losses = []
+    boundary_losses = []
+
+    i = 0
+    for epoch in range(num_epochs):
+        model.train()
+        for batch in tqdm(train_dataloader):
+            x, y = batch
+            optimizer.zero_grad()
+            z = torch.cat((x, y), dim=-1)
+            u = model(z)
+            laplacian_loss, boundary_loss = compute_loss_square(model, u, x, y, boundary_condition)
+            loss = boundary_loss + alpha * laplacian_loss 
+            laplace_losses.append(laplacian_loss.item())
+            boundary_losses.append(boundary_loss.item())
+            loss.backward()
+            optimizer.step()
+
+            plot_solution(model, low=0.0, high=1.0, id=i)
+            i += 1
+        
+        print(f"Epoch {epoch}")
+
+    return laplace_losses, boundary_losses

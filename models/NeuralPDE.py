@@ -1,12 +1,12 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
-
 """
 Dirichlet Boundary Condition: u(x, y) = f(x, y) for (x, y) on the boundary B
 """
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import Dataset
+from typing import Dict, Callable
 
 # Models
 
@@ -47,13 +47,29 @@ class VanillaMLP(nn.Module):
 
 
 
-class ImpositionMLP(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, depth, activation, weak_distance_f):
+class ADF_MLP(nn.Module):
+    def __init__(
+        self, 
+        input_dim: int, 
+        hidden_dim: int, 
+        output_dim: int, 
+        depth: int, 
+        activation: nn.Module, 
+        boundary_condition: Dict[str, float],
+        domain_bounds: Dict[str, float],
+        adf: Callable,
+        boundary_value_func: Callable
+    ):
         """
         https://www.sciencedirect.com/science/article/pii/S2405844023060280#coi0001
         Method M_B
 
         Gets boundary condition 'for free'
+
+        Approximate Distance Function MLP
+
+        For huge datasets, it's better to define the boundary and domain bounds in the adf function themselves
+        treat the adf function like a functional
         """
 
         super().__init__()
@@ -63,7 +79,12 @@ class ImpositionMLP(nn.Module):
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
         self.activation = activation
-        self.weak_distance_f = weak_distance_f
+        self.d_b = domain_bounds
+        self.b_c = boundary_condition
+        self.adf = adf
+        self.bvf = boundary_value_func
+
+
     
     def forward(self, z):
         z1 = self.fc1(z)
@@ -72,8 +93,11 @@ class ImpositionMLP(nn.Module):
             z1 = layer(z1)
             z1 = self.activation(z1)
         
-        z1 = self.output_layer(z1)
-        return self.weak_distance_f(z1)
+        nn_out = self.output_layer(z1)
+        
+        return self.adf(z, self.d_b).view(-1, 1) * nn_out + self.bvf(z, self.b_c, self.d_b).view(-1, 1)
+ 
+
     
 
 

@@ -9,13 +9,10 @@ from models.NeuralPDE import DomainDataset
 from torch.utils.data import DataLoader
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
 from typing import Dict
 
 
-
-
-def data_loader_rectangle(
+def data_loader_square(
     num_points: int = 10000,
     low: int = 0,
     high: int = 1
@@ -42,7 +39,7 @@ def data_loader_rectangle(
     return domain_dataloader, val_dataloader
 
 
-def data_rectangle_dirichlet(
+def data_square(
     num_points: int = 10000,
     low: int = 0,
     high: int = 1
@@ -71,7 +68,6 @@ def data_rectangle_dirichlet(
     return x, y, x_val, y_val
 
 
-
 def gen_boundary_points_square(num_boundary_points: int = 1000, low: int = 0, high: int = 1):
     """
     Generate boundary points on the domain [low, high] x [low, high]
@@ -97,7 +93,6 @@ def gen_boundary_points_square(num_boundary_points: int = 1000, low: int = 0, hi
     left = torch.cat((x_left, y), dim=-1)
     right = torch.cat((x_right, y), dim=-1)
     return bottom, top, left, right
-
 
 
 def gen_interior_points_rectangle(
