@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# Might want to try different activation functions for differentiability
+
 class Deep_Transform(nn.Sequential):
     def __init__(self, input_dim, hidden_dim=1000, output_dim=2):
         super(Deep_Transform, self).__init__()

@@ -13,12 +13,15 @@ from utils.deep_kernel_utils import(
 # Define own GP model
 # Not sure if this is as general as I would like, as depending on kernel
 # this might need to change.
+# Need to supply mean and kernel function
 class GP(gpytorch.models.ExactGP):
-    def __init__(self, train_x, train_y, marginal_likelihood, mean, covar):
-        super(GP, self).__init__(train_x, train_y, marginal_likelihood)
+    def __init__(self, train_x, train_y, likelihood, mean, covar, distribution):
+        super(GP, self).__init__(train_x, train_y, likelihood)
         self.transform = Deep_Transform(input_dim=train_x.size(dim=-1))
         self.mean_module = mean
         self.covar_module = covar   # This is the prior kernel
+        self.scale_to_bounds = gpytorch.utils.grid.ScaleToBounds(-1., 1.)
+        self.distribution = distribution
         
     def forward(self, x):
         # Pass data through transformation
@@ -27,4 +30,4 @@ class GP(gpytorch.models.ExactGP):
 
         x_mean = self.mean_module(x_transform)      # Compute mean
         x_covar = self.covar_module(x_transform)    # and covariance
-        return gpytorch.distributions.MultivariateNormal(x_mean, x_covar)   # Return multivariate gaussian defined by mean and covariance
+        return self.distribution(x_mean, x_covar)   # Return multivariate gaussian defined by mean and covariance
