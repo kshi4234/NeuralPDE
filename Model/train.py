@@ -25,8 +25,17 @@ from utils.loss_utils import(
     Generic_Loss,
     mse_loss,
 )
+from utils.data_utils import(
+    gen_interior_points_rectangle,
+    data_square,
+    data_loader_square,
+)
+from PDEs.Laplacian import(
+    rectangle_loss,
+    compute_loss_square,
+)
 from Regression.regression_data import(
-    gen_data
+    gen_regression_data,
 )
 
 # Currently testing linear regression
@@ -66,7 +75,25 @@ def test(model, likelihood, test_data, loss_fn, batch_size=1):
     return preds
 
 # Generate Data
-train_x, train_y, val_x, val_y = gen_data(datapoints=100, train=True)
+def gen_data(problem='regression', datapoints=1000, train=True,
+             boundary_condition={"bottom": 1.0, "top": 0, "left": 1.0, "right": 0},
+             domain_bounds={"bottom": 0, "left": 0, "top": 1, "right": 1}):
+    if problem == 'regression':
+        data = gen_regression_data(datapoints=1000, train=train)
+    elif problem == 'laplacian':
+        # So far, laplacian only generates training data and no validation set.
+        data = gen_interior_points_rectangle(5, domain_bounds)
+    return data
+
+# -------------------------------------------------------------------------------------
+# Set type of problem we want to generate data for here
+problem = 'regression'
+# If PDE, need to set boundary conditions and domain.
+boundary_condition={"bottom": 1.0, "top": 0, "left": 1.0, "right": 0}
+domain_bounds={"bottom": 0, "left": 0, "top": 1, "right": 1}
+train_x, train_y, val_x, val_y = gen_data(problem=problem, datapoints=1000,
+                                          boundary_condition=boundary_condition,
+                                          domain_bounds=domain_bounds)
 
 # Set kernel and likelihood
 mean = gpytorch.means.ConstantMean()
@@ -82,7 +109,7 @@ if torch.cuda.is_available():
     likelihood = likelihood.cuda()
 mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
-
+# Set optimizer
 optimizer = torch.optim.Adam([
     {'params': model.transform.parameters()},
     {'params': model.covar_module.parameters()},
@@ -90,15 +117,17 @@ optimizer = torch.optim.Adam([
     {'params': model.likelihood.parameters()},
 ], lr=0.1)
 
+# Train the model
 train(model=model,
       train_data=(train_x, train_y),
       val_data=(val_x, val_y),
       optimizer=optimizer,
       loss_fn=mll,
-      epochs=100,
+      epochs=150,
       )
 
-test_x, test_y = gen_data(datapoints=100, train=False)
+# Generate regression test points
+test_x, test_y = gen_data(problem='regression', datapoints=100, train=False)
 
 prediction = test(model=model,
                   likelihood=likelihood,

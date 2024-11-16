@@ -5,7 +5,7 @@ def func(x):
     return 3 * x
 
 # Batching not implemented
-def gen_data(datapoints=100, batch_size=1, train_ratio=0.8, train=True):
+def gen_regression_data(datapoints=100, batch_size=1, train_ratio=0.8, train=True):
     x = torch.linspace(0, 10, steps=datapoints).reshape(datapoints, 1)
     y = func(x).squeeze()
     

@@ -2,6 +2,7 @@
 import torch
 # Generic loss function class. Can be implemented by specific loss functions
 # Pretty much useless, just wrote this to have something to import
+# If we need a class for loss, this might be useful, otherwise just leave it alone and delete it if it turns out it's unneeded.
 class Generic_Loss():
     def __init__(self):
         return
