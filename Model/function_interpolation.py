@@ -12,8 +12,8 @@ import numpy as np
 
 
 x = torch.linspace(0, 1, 10)
-noise = torch.randn(10) * 0.3
-y = torch.sin(x) + torch.cos(x) + noise
+noise = torch.randn(10) * 0.1
+y = 3.0 * x + noise
 
 class GP(gpytorch.models.ExactGP):
     def __init__(self, train_x, train_y, likelihood):
@@ -75,20 +75,9 @@ with torch.no_grad():
     # confidence region
     lower, upper = f_preds.confidence_region()
     plt.fill_between(test_x.numpy(), lower.numpy(), upper.numpy(), color='mediumpurple', alpha=0.5)
-    plt.ylim([-3.5, 3.5])
+    # plt.ylim([0.0, 3.5])
     plt.legend(['Observed Data', 'Sample Functions', 'Confidence Region'])
     plt.title("GP Function Interpolation")
     plt.show()
 
 
-    # # Plot observed data
-    # ax.plot(x.numpy(), y.numpy(), 'k*', label='Observed Data')
-
-    # # Plot sampled functions
-    # for i in range(f_samples.shape[0]):
-    #     ax.plot(test_x.numpy(), f_samples[i].numpy(), linewidth=1.0, alpha=1.0)    
-
-    # ax.fill_between(test_x.numpy(), lower.numpy(), upper.numpy(), color='mediumpurple', alpha=0.5)
-    # ax.set_ylim([-2, 2.0])
-    # ax.legend(['Observed Data', 'Sample Functions'])
-    # plt.show()

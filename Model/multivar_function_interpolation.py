@@ -5,7 +5,9 @@ Multivariate function interpolation with Gaussian Processes
 import torch
 import gpytorch
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
+
 
 
 # sample from [-7, 7] x [-7, 7]
@@ -29,16 +31,14 @@ plt.show()
 
 # GP Code
 
-x_train = torch.linspace(-7, 7, 5)
-y_train = torch.linspace(-7, 7, 5)
+x_train = torch.linspace(-7, 7, 10)
+y_train = torch.linspace(-7, 7, 10)
 X_train, Y_train = torch.meshgrid(x_train, y_train, indexing="ij")
 Z_train = torch.sin(X_train) + torch.cos(Y_train)
 
 x_train_flat = X_train.flatten()
 y_train_flat = Y_train.flatten()
 z_train_flat = Z_train.flatten()
-
-print(x_train_flat.shape, y_train_flat.shape, z_train_flat.shape)
 
 xy_train = torch.cat((x_train_flat.unsqueeze(1), y_train_flat.unsqueeze(1)), dim=-1)
 
@@ -84,8 +84,8 @@ for i in range(100):
 model.eval()
 likelihood.eval()
 
-test_x = torch.linspace(-7, 7, 20)
-test_y = torch.linspace(-7, 7, 20)
+test_x = torch.linspace(-7, 7, 15)
+test_y = torch.linspace(-7, 7, 15)
 test_X, test_Y = torch.meshgrid(test_x, test_y, indexing="ij")
 test_X_flat = test_X.flatten()
 test_Y_flat = test_Y.flatten()
@@ -94,7 +94,7 @@ test_xy = torch.cat((test_X_flat.unsqueeze(1), test_Y_flat.unsqueeze(1)), dim=-1
 
 with torch.no_grad():
     f_preds = model(test_xy)     # Generates MVG
-    f_samples = f_preds.sample(sample_shape=torch.Size([5]))
+    f_samples = f_preds.sample(sample_shape=torch.Size([10]))
 
 
 # Plotting
@@ -111,15 +111,15 @@ with torch.no_grad():
             test_X.numpy(),
             test_Y.numpy(),
             f_samples[i].reshape(test_X.shape).numpy(),
-            alpha=0.3,
-            cmap="viridis",
+            alpha=0.4,
+            cmap='viridis',
             edgecolor='none',
         )
 
     # Confidence region
     lower, upper = f_preds.confidence_region()
-    lower_surface = lower.reshape(test_X.shape).numpy() - 1.0
-    upper_surface = upper.reshape(test_X.shape).numpy() + 1.0
+    lower_surface = lower.reshape(test_X.shape).numpy() - 3.0
+    upper_surface = upper.reshape(test_X.shape).numpy() + 3.0
 
     ax.plot_surface(test_X.numpy(), test_Y.numpy(), lower_surface, alpha=0.5, color="blue", label="Lower Bound")
     ax.plot_surface(test_X.numpy(), test_Y.numpy(), upper_surface, alpha=0.5, color="red", label="Upper Bound")
