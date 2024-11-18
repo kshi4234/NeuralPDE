@@ -5,11 +5,22 @@ if module_path not in sys.path:
     sys.path.append(module_path)
     print(module_path)
 
-from models.NeuralPDE import DomainDataset
 from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 import torch
 import numpy as np
 from typing import Dict
+
+class DomainDataset(Dataset):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, idx):
+        return self.x[idx], self.y[idx]
 
 
 def data_loader_square(
@@ -140,5 +151,3 @@ def gen_boundary_points_rectangle(num_boundary_points: int = 1000, domain_bounds
     left = torch.cat((x_left, y), dim=-1)
     right = torch.cat((x_right, y), dim=-1)
     return bottom, top, left, right
-
-
