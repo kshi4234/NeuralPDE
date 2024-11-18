@@ -13,5 +13,12 @@ class Generic_Loss():
 # Mean Squared Error
 def mse_loss(x, y, reduction='mean'):
     return torch.nn.MSELoss(x, y, reduction=reduction)
-    
+
+# Since GP does not batch, the gradient loss must be the sum (or average) of 
+# residuals between all gradients for each input x and y.
+def pde_loss(pde_type, x, y):
+    if pde_type == 'laplacian':
+        # TODO
+        pass
+    pass
     

@@ -2,7 +2,7 @@ import torch
 
 # Function is literally just y = 3x
 def func(x):
-    return 3 * x
+    return torch.sin(2 * x) + torch.cos(x)
 
 # Batching not implemented
 def gen_regression_data(datapoints=100, batch_size=1, train_ratio=0.8, train=True):

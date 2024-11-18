@@ -63,86 +63,97 @@ def train(model, train_data, val_data, optimizer, loss_fn, epochs=20):
 def test(model, likelihood, test_data, loss_fn, batch_size=1):
     model.eval()
     likelihood.eval()
-    test_loss = 0
     with torch.no_grad():
         x, y = test_data
         output = model(x)
-        preds = likelihood(output)
+        samples = output.sample(sample_shape=torch.Size([10]))
         # print('PREDS:', preds)
         # loss = -loss_fn(preds, y)
         # test_loss = loss.detach().clone()
         # print('TEST LOSS = %d' % (test_loss))
-    return preds
+    return output, samples
 
 # Generate Data
+# Generates data for either regression or PDEs, specification must be passed to function
 def gen_data(problem='regression', datapoints=1000, train=True,
              boundary_condition={"bottom": 1.0, "top": 0, "left": 1.0, "right": 0},
              domain_bounds={"bottom": 0, "left": 0, "top": 1, "right": 1}):
     if problem == 'regression':
-        data = gen_regression_data(datapoints=1000, train=train)
+        data = gen_regression_data(datapoints=datapoints, train=train)
     elif problem == 'laplacian':
         # So far, laplacian only generates training data and no validation set.
         data = gen_interior_points_rectangle(5, domain_bounds)
     return data
 
 # -------------------------------------------------------------------------------------
+
+def train_wrapper(problem, data, epochs=100):
+    # Set kernel and likelihood
+    if problem == 'regression':
+        train_x, train_y, val_x, val_y = data
+    else:
+        train_x, train_y = data
+        val_x, val_y = None, None
+    
+    mean = gpytorch.means.ConstantMean()
+    covar = gpytorch.kernels.GridInterpolationKernel(
+                    gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=2)),
+                    num_dims=2, grid_size=100)
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    distribution = gpytorch.distributions.MultivariateNormal
+    # Define model and log marginal likelihood (loss function for optimization)
+    model = GP(train_x=train_x, train_y=train_y, mean=mean, covar=covar, likelihood=likelihood, distribution=distribution)
+    if torch.cuda.is_available():
+        model = model.cuda()
+        likelihood = likelihood.cuda()
+    mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+    # Set optimizer
+    optimizer = torch.optim.Adam([
+        {'params': model.transform.parameters()},
+        {'params': model.covar_module.parameters()},
+        {'params': model.mean_module.parameters()},
+        {'params': model.likelihood.parameters()},
+    ], lr=0.02)
+    # Train the model
+    train(model=model,
+        train_data=(train_x, train_y),
+        val_data=(val_x, val_y),
+        optimizer=optimizer,
+        loss_fn=mll,
+        epochs=epochs,
+        )
+
+    # Generate regression test points
+    test_x, test_y = gen_data(problem='regression', datapoints=100, train=False)
+
+    preds, samples = test(model=model,
+                          likelihood=likelihood,
+                          test_data=(test_x, test_y),
+                          loss_fn=mse_loss)
+
+
+    with torch.no_grad():
+        plt.figure(figsize=(10, 6))
+        # observed data
+        plt.plot(train_x.squeeze().numpy(), train_y.squeeze().numpy(), 'k*', label='Observed Data')
+
+        # sampled functions
+        for i in range(samples.shape[0]):
+            plt.plot(test_x.squeeze().numpy(), samples[i].numpy(), linewidth=1.0, alpha=0.8)    
+
+        # confidence region
+        lower, upper = preds.confidence_region()
+        plt.fill_between(test_x.squeeze().numpy(), lower.numpy(), upper.numpy(), color='mediumpurple', alpha=0.5)
+        plt.ylim([-3.5, 3.5])
+        plt.legend(['Observed Data', 'Sample Functions', 'Confidence Region'])
+        plt.title("GP Function Interpolation")
+        plt.show()
 # Set type of problem we want to generate data for here
 problem = 'regression'
 # If PDE, need to set boundary conditions and domain.
 boundary_condition={"bottom": 1.0, "top": 0, "left": 1.0, "right": 0}
 domain_bounds={"bottom": 0, "left": 0, "top": 1, "right": 1}
-train_x, train_y, val_x, val_y = gen_data(problem=problem, datapoints=1000,
-                                          boundary_condition=boundary_condition,
-                                          domain_bounds=domain_bounds)
-
-# Set kernel and likelihood
-mean = gpytorch.means.ConstantMean()
-covar = gpytorch.kernels.GridInterpolationKernel(
-                gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel(ard_num_dims=2)),
-                num_dims=2, grid_size=100)
-likelihood = gpytorch.likelihoods.GaussianLikelihood()
-distribution = gpytorch.distributions.MultivariateNormal
-# Define model and log marginal likelihood (loss function for optimization)
-model = GP(train_x=train_x, train_y=train_y, mean=mean, covar=covar, likelihood=likelihood, distribution=distribution)
-if torch.cuda.is_available():
-    model = model.cuda()
-    likelihood = likelihood.cuda()
-mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
-
-# Set optimizer
-optimizer = torch.optim.Adam([
-    {'params': model.transform.parameters()},
-    {'params': model.covar_module.parameters()},
-    {'params': model.mean_module.parameters()},
-    {'params': model.likelihood.parameters()},
-], lr=0.1)
-
-# Train the model
-train(model=model,
-      train_data=(train_x, train_y),
-      val_data=(val_x, val_y),
-      optimizer=optimizer,
-      loss_fn=mll,
-      epochs=150,
-      )
-
-# Generate regression test points
-test_x, test_y = gen_data(problem='regression', datapoints=100, train=False)
-
-prediction = test(model=model,
-                  likelihood=likelihood,
-                  test_data=(test_x, test_y),
-                  loss_fn=mse_loss)
-
-
-f, ax = plt.subplots(1, 1, figsize=(4, 3))
-lower, upper = prediction.confidence_region()
-# Plot training data as black stars
-ax.plot(train_x.squeeze().numpy(), train_y.numpy(), 'k*')
-# Plot predictive means as blue line
-ax.plot(test_x.squeeze().numpy(), prediction.mean.numpy(), 'b')
-# Shade between the lower and upper confidence bounds
-ax.fill_between(test_x.squeeze().numpy(), lower.numpy(), upper.numpy(), alpha=0.5)
-ax.set_ylim([0, 30])
-ax.legend(['Observed Data', 'Mean', 'Confidence'])
-plt.show()
+data = gen_data(problem=problem, datapoints=1000,
+                boundary_condition=boundary_condition,
+                domain_bounds=domain_bounds)
+train_wrapper(problem=problem, data=data, epochs=40)
