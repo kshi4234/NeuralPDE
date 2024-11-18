@@ -1,2 +1,2 @@
-# NeuralPDE
-Neural PDE Solver
+# GP PDE
+Gaussian Process PDE Solver
