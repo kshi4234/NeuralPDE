@@ -84,7 +84,7 @@ def plot_solution(model: nn.Module, low: float, high: float, id: Optional[int] =
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('U')
-        ax.set_zlim(2, 3)
+        # ax.set_zlim(2, 3)
         
         if id == -1:
             plt.show()

@@ -32,11 +32,11 @@ import torch
 import torch.nn.functional as F
 
 if __name__ == "__main__":
-    Laplacian_PINN = VanillaMLP(2, 128, 1, 3, activation=F.relu)
+    Laplacian_PINN = VanillaMLP(2, 128, 1, 3, activation=F.gelu)
     
 
-    boundary_condition = {"bottom": 1.0, "top": 0, "left": 1.0, "right": 0}     # this is the boundary condition
-    domain_bounds = {"bottom": 0, "left": -2, "top": 10, "right": 2}            # this is the domain bounds    
+    boundary_condition = {"bottom": 1.0, "top": 0, "left": 0, "right": 0}     # this is the boundary condition
+    domain_bounds = {"bottom": 0, "left": 0, "top": 2, "right": 2}            # this is the domain bounds    
 
     optimizer = torch.optim.AdamW(Laplacian_PINN.parameters(), lr=0.01)
 
@@ -77,6 +77,6 @@ if __name__ == "__main__":
     print(f"Initial Boundary Loss: {boundary_losses[0]}")
     print(f"Laplace Loss: {laplace_losses[-1]}")
     print(f"Boundary Loss: {boundary_losses[-1]}")
-    plot_solution(Laplacian_PINN, domain_bounds, id=-1, z_lim_down=0.0, z_lim_up=3.0)
+    plot_solution(Laplacian_PINN, low=0, high=2, id=-1)
     # make_gif(folder=FOLDER, name="learning_laplacian", fps=4)
     
