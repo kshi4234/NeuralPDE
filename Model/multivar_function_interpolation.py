@@ -86,7 +86,9 @@ likelihood.eval()
 
 test_x = torch.linspace(-7, 7, 15)
 test_y = torch.linspace(-7, 7, 15)
+
 test_X, test_Y = torch.meshgrid(test_x, test_y, indexing="ij")
+
 test_X_flat = test_X.flatten()
 test_Y_flat = test_Y.flatten()
 
@@ -105,6 +107,7 @@ with torch.no_grad():
     # Observed data points
     ax.scatter(x_train_flat, y_train_flat, z_train_flat, c="k", marker="*", label="Observed Data")
 
+
     # Sample functions
     for i in range(f_samples.shape[0]):
         ax.plot_surface(
@@ -115,6 +118,9 @@ with torch.no_grad():
             cmap='viridis',
             edgecolor='none',
         )
+
+        # f_samples[i].shape: [225]
+        # test_X.shape: [15, 15]
 
     # Confidence region
     lower, upper = f_preds.confidence_region()

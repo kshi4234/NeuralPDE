@@ -7,7 +7,7 @@ from tqdm import tqdm
 # Define Model
 
 train_x = torch.linspace(0, 2.0, 10) 
-noise = torch.randn(10) * 0.5
+noise = torch.randn(10) * 0.3
 train_y = 2.0 * train_x + noise
 
 plt.scatter(train_x, train_y)
@@ -18,9 +18,9 @@ class FeatureExtractor(torch.nn.Sequential):
     def __init__(self):
         super().__init__()
         self.add_module("linear1", torch.nn.Linear(1, 128))
-        self.add_module("relu1", torch.nn.ReLU())
+        self.add_module("relu1", torch.nn.Tanh())
         self.add_module("linear2", torch.nn.Linear(128, 128))
-        self.add_module("relu2", torch.nn.ReLU())
+        self.add_module("relu2", torch.nn.Tanh())
         self.add_module("linear3", torch.nn.Linear(128, 1))
     
         
