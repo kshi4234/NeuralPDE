@@ -197,18 +197,18 @@ def gen_interior_points_circle(radius, center_x, center_y, point_count):
 
     return x, y
 
-radius = 1.0
-center_x = 0.0
-center_y = 0.0
-point_count = 1000
+# radius = 1.0
+# center_x = 0.0
+# center_y = 0.0
+# point_count = 1000
 
-x, y = gen_interior_points_circle(radius, center_x, center_y, point_count)
-b_x, b_y = gen_boundary_points_circle(radius, center_x, center_y, point_count)
+# x, y = gen_interior_points_circle(radius, center_x, center_y, point_count)
+# b_x, b_y = gen_boundary_points_circle(radius, center_x, center_y, point_count)
 
-plt.figure(figsize=(8, 8))
-plt.scatter(x.detach().numpy(), y.detach().numpy(), color="red")
-plt.scatter(b_x.detach().numpy(), b_y.detach().numpy(), color="blue")
-plt.show()
+# plt.figure(figsize=(8, 8))
+# plt.scatter(x.detach().numpy(), y.detach().numpy(), color="red")
+# plt.scatter(b_x.detach().numpy(), b_y.detach().numpy(), color="blue")
+# plt.show()
 
 
 
