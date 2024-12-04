@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # This needs to be flattened and detached 
     u_test = Laplacian_PINN(xy_test).squeeze(1)
     # Add noise
-    u_test += torch.randn_like(u_test) * 0.20
+    u_test += torch.randn_like(u_test) * 0.30
 
     u_plot = u_test.reshape(X.shape).detach().numpy()
 
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         print(GPY)
         print(f_samples[0].reshape(GPX.shape).shape)
         # Sample functions
-        colors = ['red', 'green', 'blue']
+        colors = ['blue', 'green', 'red']
         for i in range(f_samples.shape[0]):
             ax.plot_surface(
                 GPX.numpy(),
@@ -194,7 +194,6 @@ if __name__ == "__main__":
         ax.set_ylabel("y")
         ax.set_zlabel("z")
         plt.title("Laplacian Dirichlet GP Solution")
-        plt.legend(["Observed Data", "Sample Functions"])
         plt.show()
 
     

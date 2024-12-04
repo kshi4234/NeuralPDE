@@ -7,7 +7,7 @@ from tqdm import tqdm
 # Define Model
 
 train_x = torch.linspace(0, 2.0, 10) 
-noise = torch.randn(10) * 0.3
+noise = torch.randn(10) * 0.2
 train_y = 2.0 * train_x + noise
 
 plt.scatter(train_x, train_y)
@@ -23,14 +23,14 @@ class FeatureExtractor(torch.nn.Sequential):
         self.add_module("relu2", torch.nn.Tanh())
         self.add_module("linear3", torch.nn.Linear(128, 1))
     
-        
+    
 
 
 
 class DeepKernelGP(gpytorch.models.ExactGP):
     def __init__(self, train_x, train_y, likelihood, feature_extractor):
         super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
+        self.mean_module = gpytorch.means.ZeroMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
         self.feature_extractor = feature_extractor
         self.scale_to_bounds = gpytorch.utils.grid.ScaleToBounds(-1., 1.)
@@ -38,12 +38,13 @@ class DeepKernelGP(gpytorch.models.ExactGP):
     def forward(self, x):
         proj_x = self.feature_extractor(x)
         proj_x = self.scale_to_bounds(proj_x)
+        
         mean_x = self.mean_module(proj_x)
         covar_x = self.covar_module(proj_x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
 noise_constraint = gpytorch.constraints.GreaterThan(1e-9)
-likelihood = gpytorch.likelihoods.GaussianLikelihood(noise_constraint=noise_constraint)
+likelihood = gpytorch.likelihoods.GaussianLikelihood()
 likelihood.noise = torch.tensor(1e-4)
 likelihood.noise_covar.raw_noise.requires_grad = False  # Don't train noise
 
@@ -78,7 +79,7 @@ for i in tqdm(range(100)):
 model.eval()
 likelihood.eval()
 
-test_x = torch.linspace(0, 2.0, 30)
+test_x = torch.linspace(0, 5.0, 30) # scale further out
 
 with torch.no_grad():
     f_preds = model(test_x)
@@ -89,7 +90,7 @@ with torch.no_grad():
 
     # Sampled Functions
     for i in range(f_samples.shape[0]):
-        plt.plot(test_x.numpy(), f_samples[i].numpy(), linewidth=1.0, alpha=0.8)
+        plt.plot(test_x.numpy(), f_samples[i].numpy(), 'o', linewidth=1.0, alpha=0.8)
 
     
     lower, upper = f_preds.confidence_region()
