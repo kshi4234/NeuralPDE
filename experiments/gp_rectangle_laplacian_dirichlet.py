@@ -172,23 +172,23 @@ if __name__ == "__main__":
         print(f_samples[0].reshape(GPX.shape).shape)
         # Sample functions
         colors = ['blue', 'green', 'red']
-        for i in range(f_samples.shape[0]):
-            ax.plot_surface(
-                GPX.numpy(),
-                GPY.numpy(),
-                f_samples[i].reshape(GPX.shape).numpy(),
-                alpha=0.4,
-                edgecolor='none',
-                color=colors[i]
-            )
+        # for i in range(f_samples.shape[0]):
+        #     ax.plot_surface(
+        #         GPX.numpy(),
+        #         GPY.numpy(),
+        #         f_samples[i].reshape(GPX.shape).numpy(),
+        #         alpha=0.4,
+        #         edgecolor='none',
+        #         color=colors[i]
+        #     )
 
         # Confidence region
         lower, upper = f_preds.confidence_region()
-        # lower_surface = lower.reshape(GPX.shape).numpy() - 3.0
-        # upper_surface = upper.reshape(GPX.shape).numpy() + 3.0
+        lower_surface = lower.reshape(GPX.shape).numpy() 
+        upper_surface = upper.reshape(GPX.shape).numpy() 
 
-        # ax.plot_surface(GPX.numpy(), GPY.numpy(), lower_surface, alpha=0.5, color="blue", label="Lower Bound")
-        # ax.plot_surface(GPX.numpy(), GPY.numpy(), upper_surface, alpha=0.5, color="red", label="Upper Bound")
+        ax.plot_surface(GPX.numpy(), GPY.numpy(), lower_surface, alpha=0.5, color="blue", label="Lower Bound")
+        ax.plot_surface(GPX.numpy(), GPY.numpy(), upper_surface, alpha=0.5, color="red", label="Upper Bound")
 
         ax.set_xlabel("x")
         ax.set_ylabel("y")

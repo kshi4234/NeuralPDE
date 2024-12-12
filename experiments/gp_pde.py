@@ -75,3 +75,8 @@ top_y_points = torch.cat((xy[:100, 0].unsqueeze(1), y_top), dim=-1)
 
 
 
+# kernel and derivatives
+
+kernel = gpytorch.kernels.RBFKernel()  # doesn't have a grad attr (?)
+
+
