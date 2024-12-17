@@ -49,6 +49,27 @@ def compute_laplacian(u, x, y):
     return laplacian
 
 
+def compute_poisson(u, x, y, f):
+    """
+
+    Args:
+        u: The solution to the PDE
+        x: The x-coordinates of the domain
+        y: The y-coordinates of the domain
+        f (function): The source term of the PDE, should be able to take in tensor-valued x, y
+    """
+    du_dx = torch.autograd.grad(u, x, grad_outputs=torch.ones_like(u), create_graph=True)[0]
+    du_dy = torch.autograd.grad(u, y, grad_outputs=torch.ones_like(u), create_graph=True)[0]
+
+    du2_dx2 = torch.autograd.grad(du_dx, x, grad_outputs=torch.ones_like(du_dx), create_graph=True)[0]
+    du2_dy2 = torch.autograd.grad(du_dy, y, grad_outputs=torch.ones_like(du_dy), create_graph=True)[0]
+
+    laplacian = du2_dx2 + du2_dy2
+    
+    return laplacian - f(x, y)
+
+
+
 # Boundary Functions
 def boundary_loss(model, boundary_points, boundary_condition):
     outputs = model(boundary_points)
