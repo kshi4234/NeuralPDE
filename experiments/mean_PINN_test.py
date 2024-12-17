@@ -138,7 +138,7 @@ print("NUM TEST POINTS:", u_mean.shape)
 
 with torch.no_grad(), gpytorch.settings.fast_pred_var():
     observed_pred = likelihood(model(xy_star))
-    pred_mean = observed_pred.mean + u_mean
+    pred_mean = u_mean  # Try using just the neural network as the predictive mean as well
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(projection="3d")
     # Get upper and lower confidence bounds
@@ -155,6 +155,7 @@ with torch.no_grad(), gpytorch.settings.fast_pred_var():
     ax.plot_surface(x_star.numpy(), y_star.numpy(), upper_surface, alpha=0.5, color="red", label="Upper Bound")
 
     plt.title('RBF Kernel')
+    # plt.legend(["Predictive Mean", "Finite Diff"])
     plt.legend(["Predictive Mean", "Finite Diff", "Lower Bound", "Upper Bound"])
     plt.show()
 

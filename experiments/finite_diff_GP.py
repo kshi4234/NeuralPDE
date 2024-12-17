@@ -39,8 +39,6 @@ from Regression.regression_data import(
     gen_regression_data,
 )
 
-trained_PINN, x_train, y_train = rectangle_train()
-trained_PINN.eval()
 # Generate new test points
 h = 0.0201
 length_x = 2.0
@@ -55,15 +53,8 @@ x_vals, y_vals = torch.meshgrid(x_vals, y_vals, indexing="ij")
 x_vals_flat = x_vals.flatten()
 y_vals_flat = y_vals.flatten()
 xy_vals = torch.cat((x_vals_flat.unsqueeze(1), y_vals_flat.unsqueeze(1)), dim=-1)
-# Generate solutions using the trained_PINN
-u_gen = []
-with torch.no_grad():
-    for z in xy_vals:
-        u = trained_PINN(z)
-        u_gen.append(u)
         
 u_true = torch.tensor(u_square).float().flatten()
-u_gen = torch.tensor(u_gen).float()
 
 # Define a GP with of points u_gen(x, y) - u_true(x, y). Should have 0 mean and should fit a covariance to it.
 class GP(gpytorch.models.ExactGP):
@@ -78,15 +69,12 @@ class GP(gpytorch.models.ExactGP):
         x_mean = self.mean_module(x)      # Compute mean
         x_covar = self.covar_module(x)    # and covariance
         return self.distribution(x_mean, x_covar)   # Return multivariate gaussian defined by mean and covariance
-
-u_zeroed = u_true - u_gen   # Subtract mean (PINN)
 # print(u_zeroed)
 # input("Press Enter to continue...")
 kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel()) # RBF Kernel
-# mean = gpytorch.means.ConstantMean()    # Some mean
-mean = gpytorch.means.ZeroMean()
+mean = gpytorch.means.ConstantMean()    # Some mean
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
-model = GP(xy_vals, u_zeroed, likelihood, mean=mean, covar=kernel)
+model = GP(xy_vals, u_true, likelihood, mean=mean, covar=kernel)
 
 # Training
 model.train()
@@ -98,7 +86,7 @@ marginal_ll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 for i in range(40):
     optimizer.zero_grad()
     output = model(xy_vals)
-    loss = -marginal_ll(output, u_zeroed)
+    loss = -marginal_ll(output, u_true)
     loss.backward()
     optimizer.step()
     if (i + 1) % 10 == 0:
@@ -108,7 +96,7 @@ model.eval()
 likelihood.eval()
 
 # Generate new test points
-h = 0.0301
+h = 0.0501
 length_x = 2.0
 length_y = 2.0
 x_star = np.arange(0, length_x + 0.001, h)
@@ -122,40 +110,29 @@ x_star, y_star = torch.meshgrid(x_star, y_star, indexing="ij")
 x_star_flat = x_star.flatten()
 y_star_flat = y_star.flatten()
 xy_star = torch.cat((x_star_flat.unsqueeze(1), y_star_flat.unsqueeze(1)), dim=-1)
-# Generate solutions using the trained_PINN
-# Can also try reusing training points, since otherwise GP won't fit correct confidence bound on the PINN 
-# as PINN will generate points for the test that might not align with the 'mean' of the fitted GP
 
-u_mean = []
-with torch.no_grad():
-    for z in xy_star:
-        u = trained_PINN(z)
-        u = u.detach()
-        u_mean.append(u)
-u_mean = torch.tensor(u_mean).float()
-
-print("NUM TEST POINTS:", u_mean.shape)
 
 with torch.no_grad(), gpytorch.settings.fast_pred_var():
     observed_pred = likelihood(model(xy_star))
-    pred_mean = observed_pred.mean + u_mean
+    # pred_mean = u_mean    
+    pred_mean = observed_pred.mean  # Only plot finite difference GP
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(projection="3d")
     # Get upper and lower confidence bounds
     lower, upper = observed_pred.confidence_region()
-    lower_surface, upper_surface = lower + u_mean, upper + u_mean
+    lower_surface, upper_surface = lower, upper
     lower_surface = lower_surface.reshape(x_star.shape).numpy()
     upper_surface = upper_surface.reshape(x_star.shape).numpy()
     # Plot training data as black stars
     # ax.scatter(x_vals, y_vals, u_true, c="k", marker="*", label="Observed Data")
     # Plot predictive means as blue line
     ax.plot_surface(x_star.numpy(), y_star.numpy(), pred_mean.reshape(x_star.shape).numpy(), alpha=0.5, color="green", label="Predictive Mean")
-    ax.plot_surface(x_star.numpy(), y_star.numpy(), u_star.reshape(x_star.shape).numpy(), alpha=0.5, color="purple", label="Finite Diff")
+    # ax.plot_surface(x_star.numpy(), y_star.numpy(), u_star.reshape(x_star.shape).numpy(), alpha=0.5, color="purple", label="Finite Diff")
     ax.plot_surface(x_star.numpy(), y_star.numpy(), lower_surface, alpha=0.5, color="blue", label="Lower Bound")
     ax.plot_surface(x_star.numpy(), y_star.numpy(), upper_surface, alpha=0.5, color="red", label="Upper Bound")
 
     plt.title('RBF Kernel')
-    plt.legend(["Predictive Mean", "Finite Diff", "Lower Bound", "Upper Bound"])
+    plt.legend(["Predictive Mean", "Lower Bound", "Upper Bound"])
     plt.show()
 
 print('MADE IT!')
