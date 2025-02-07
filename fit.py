@@ -4,7 +4,7 @@ import torch
 from neural_pde.utils.parser import get_training_parser
 from neural_pde.nn.nn_fns import get_model
 from neural_pde.data.data_fns import get_loaders
-from neural_pde.loss.loss_fns import get_loss
+from neural_pde.loss.losses import get_loss
 from neural_pde.opt.opt_fns import get_opt
 
 import wandb
