@@ -15,5 +15,5 @@ def get_training_parser():
 
 def get_data_parser():
     parser = argparse.ArgumentParser(description="GP-PDE Data")
-    parser.add_argument("--distribution", type=str, default="./datasets")
+    parser.add_argument("--shape", type=str, default="square")
     return parser

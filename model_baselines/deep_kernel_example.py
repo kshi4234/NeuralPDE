@@ -3,49 +3,31 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-
-# Define Model
+from neural_pde.gaussian_process.deep_kernel import FeatureExtractor, DeepKernelGP, FeatureExtractorConfig, DeepKernelGPConfig
 
 train_x = torch.linspace(0, 2.0, 10) 
 noise = torch.randn(10) * 0.3
 train_y = 2.0 * train_x + noise
 
+# standardize - really important for GPs
 train_x_std = (train_x - train_x.mean()) / train_x.std()
 train_y_std = (train_y - train_y.mean()) / train_y.std()
 
 
 plt.scatter(train_x_std, train_y_std)
+plt.title("Training Data")
 plt.show()
 
-class FeatureExtractor(torch.nn.Sequential):
-    def __init__(self):
-        super().__init__()
-        self.add_module("linear1", torch.nn.Linear(1, 128))
-        self.add_module("relu1", torch.nn.Tanh())
-        self.add_module("linear2", torch.nn.Linear(128, 128))
-        self.add_module("relu2", torch.nn.Tanh())
-        self.add_module("linear3", torch.nn.Linear(128, 1))
-    
-class DeepKernelGP(gpytorch.models.ExactGP):
-    def __init__(self, train_x, train_y, likelihood, feature_extractor):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ZeroMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-        self.feature_extractor = feature_extractor
-        self.scale_to_bounds = gpytorch.utils.grid.ScaleToBounds(-1., 1.)
-    
-    def forward(self, x):
-        proj_x = self.feature_extractor(x)
-        proj_x = self.scale_to_bounds(proj_x)
-        
-        mean_x = self.mean_module(proj_x)
-        covar_x = self.covar_module(proj_x)
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+# use default config
+feature_extractor_config = FeatureExtractorConfig()
+deep_kernel_gp_config = DeepKernelGPConfig()
 
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
-feature_extractor = FeatureExtractor()
-model = DeepKernelGP(train_x_std, train_y_std, likelihood, feature_extractor)
+feature_extractor = FeatureExtractor(feature_extractor_config)
+model = DeepKernelGP(train_x_std, train_y_std, likelihood, feature_extractor, deep_kernel_gp_config)
+
+
 hyper_params = {
     "likelihood.noise_covar.noise": 0.01,
     "covar_module.base_kernel.lengthscale": 0.4,
@@ -59,7 +41,7 @@ model.train()
 likelihood.train()
 marginal_ll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
 
 # Training
 loss_list = []
@@ -72,6 +54,9 @@ for i in tqdm(range(100)):
     loss_list.append(loss.item())
 
 plt.plot(loss_list)
+plt.xlabel("Iteration")
+plt.ylabel("Loss")
+plt.title("Training Loss")
 plt.show()
 
 # Evaluation

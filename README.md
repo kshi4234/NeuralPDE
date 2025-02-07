@@ -8,3 +8,5 @@ We want to try different models for this:
 - Deep Sequence Models (transformers, RNNs)
 - MLPs
 
+We also want to try different approaches for this: 
+- 
