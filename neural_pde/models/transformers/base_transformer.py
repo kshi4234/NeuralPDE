@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
-from neural_pde.transformers.common import Block, LayerNorm
+from neural_pde.models.transformers.common import Block, LayerNorm
 
 
 @dataclass 

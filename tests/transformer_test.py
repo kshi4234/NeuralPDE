@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from neural_pde.transformers.base_transformer import Transformer, TransformerConfig
+from neural_pde.models.transformers.base_transformer import Transformer, TransformerConfig
 
 # regression with transformer
 

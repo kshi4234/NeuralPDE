@@ -1,8 +1,16 @@
+"""
+Gaussian Process API is different from the rest of the models.
+
+We need to pass in the training data to the model first. Only then can we fit the model. 
+"""
+
+
+
 import pickle
 import time
 import torch
 from neural_pde.utils.parser import get_training_parser
-from neural_pde.models.model import get_model
+from neural_pde.models.model import get_gp
 from neural_pde.loss.losses import get_loss
 
 import wandb
@@ -10,15 +18,19 @@ import wandb
 
 LOG_MOD = 20
 
+x_train = torch.linspace(0, 2.0, 10) 
+noise = torch.randn(10) * 0.3
+y_train = 2.0 * x_train + noise
+
 def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if args.wandb:
         wandb.init(project=args.wandb_proj)
         wandb.config.update(args.__dict__)
     
-    
+    # x_train, y_train = get_data(args)
 
-    model = get_model(args)
+    model = get_gp(args, x_train, y_train)
 
     exit()
 

@@ -1,6 +1,8 @@
 import torch
 import gpytorch
 from dataclasses import dataclass
+import torch.nn.functional as F
+
 
 @dataclass
 class FeatureExtractorConfig:
@@ -8,22 +10,24 @@ class FeatureExtractorConfig:
     hidden_dim: int = 128
     input_dim: int = 1
     output_dim: int = 1
-    activation: str = "Tanh"
+    activation: torch.nn.Module = torch.nn.ReLU
+
 
 @dataclass
 class DeepKernelGPConfig:
     mean_module: gpytorch.means.Mean = gpytorch.means.ZeroMean()
     covar_module: gpytorch.kernels.Kernel = gpytorch.kernels.RBFKernel()
 
+
 class FeatureExtractor(torch.nn.Sequential):
     def __init__(self, config: FeatureExtractorConfig):
         super().__init__()
         self.add_module("linear1", torch.nn.Linear(config.input_dim, config.hidden_dim))
-        self.add_module(config.activation, getattr(torch.nn, config.activation)())
+        self.add_module("activation", config.activation())
 
         for i in range(config.hidden_layers):
             self.add_module(f"linear{i+2}", torch.nn.Linear(config.hidden_dim, config.hidden_dim))
-            self.add_module(config.activation, getattr(torch.nn, config.activation)())
+            self.add_module("activation", config.activation())
             config.input_dim = config.hidden_dim
 
         self.add_module(f"linear{config.hidden_layers + 2}", torch.nn.Linear(config.hidden_dim, config.output_dim))

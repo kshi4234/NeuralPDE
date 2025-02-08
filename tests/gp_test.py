@@ -8,7 +8,7 @@ import gpytorch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from neural_pde.gaussian_process.standard_gp import StandardGaussianProcess, StandardGaussianProcessConfig
+from neural_pde.models.gaussian_process.standard_gp import StandardGaussianProcess, StandardGaussianProcessConfig
 
 
 x = torch.linspace(0, 1, 10)

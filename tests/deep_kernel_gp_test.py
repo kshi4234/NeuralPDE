@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from neural_pde.gaussian_process.deep_kernel import FeatureExtractor, DeepKernelGP, FeatureExtractorConfig, DeepKernelGPConfig
+from neural_pde.models.gaussian_process.deep_kernel import FeatureExtractor, DeepKernelGP, FeatureExtractorConfig, DeepKernelGPConfig
 
 train_x = torch.linspace(0, 2.0, 10) 
 noise = torch.randn(10) * 0.3
